@@ -149,12 +149,13 @@
         if (options.localCache) {
             var cacheKey = options.cacheKey,
                 storage = getStorage(options.localCache),
-                dataType = options.dataType || storage.getItem(cacheKey + TYPE_SUFFIX) || 'text',
-                value = (storage) ? storage.getItem(cacheKey) : false;
+                value = (storage) ? storage.getItem(cacheKey) : false,
+                dataType;
 
             if (value) {
                 // In the cache? Get it, parse it to json if the dataType is JSON,
                 // and call the completeCallback with the fetched value.
+                dataType = options.dataType || storage.getItem(cacheKey + TYPE_SUFFIX) || 'text';
                 if (dataType.toLowerCase().indexOf('json') !== -1) {
                     value = JSON.parse(value);
                 }
