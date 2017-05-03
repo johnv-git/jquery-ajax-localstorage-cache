@@ -1,7 +1,7 @@
 /**
  * https://github.com/SaneMethod/jquery-ajax-localstorage-cache
  */
-; (function($, window){
+;(function ($, window) {
     'use strict';
     var DEFAULT_TTL_HOURS = 5,
         TTL_SUFFIX = 'cachettl',
@@ -11,14 +11,13 @@
      * Generate the cache key under which to store the local data - either the cache key supplied,
      * or one generated from the url, the type and, if present, the data.
      */
-    var genCacheKey = function(options) {
+    var genCacheKey = function (options) {
         var url;
 
         // If cacheKey is specified, and a function, return the result of calling that function
         // as the cacheKey. Otherwise, just return the specified cacheKey as-is.
-        if (options.cacheKey){
-            return (typeof options.cacheKey === 'function') ?
-                options.cacheKey(options) : options.cacheKey;
+        if (options.cacheKey) {
+            return (typeof options.cacheKey === 'function') ? options.cacheKey(options) : options.cacheKey;
         }
 
         url = options.url.replace(/jQuery.*/, '');
@@ -38,16 +37,19 @@
      * @param {boolean|object} storage
      * @returns {boolean|object}
      */
-    var getStorage = function(storage){
-        if (!storage) return false;
-        if (storage === true) return window.localStorage;
+    var getStorage = function (storage) {
+        if (!storage) {
+            return false;
+        }
+        if (storage === true) {
+            return window.localStorage;
+        }
         if (typeof storage === "object" && 'getItem' in storage &&
-            'removeItem' in storage && 'setItem' in storage)
-        {
+            'removeItem' in storage && 'setItem' in storage) {
             return storage;
         }
         throw new TypeError("localCache must either be a boolean value, " +
-            "or an object which implements the Storage interface.");
+                            "or an object which implements the Storage interface.");
     };
 
     /**
@@ -55,7 +57,7 @@
      * @param {Storage|object} storage
      * @param {string} cacheKey
      */
-    var removeFromStorage = function(storage, cacheKey){
+    var removeFromStorage = function (storage, cacheKey) {
         storage.removeItem(cacheKey);
         storage.removeItem(cacheKey + TTL_SUFFIX);
         storage.removeItem(cacheKey + TYPE_SUFFIX);
@@ -74,7 +76,7 @@
      * @method $.ajaxPrefilter
      * @param options {Object} Options for the ajax call, modified with ajax standard settings
      */
-    $.ajaxPrefilter(function(options){
+    $.ajaxPrefilter(function (options) {
         var storage = getStorage(options.localCache),
             hourstl = options.cacheTTL || DEFAULT_TTL_HOURS,
             cacheKey = options.cacheKey = genCacheKey(options),
@@ -83,32 +85,36 @@
             ttl,
             value;
 
-        if (!storage) return;
+        if (!storage) {
+            return;
+        }
         ttl = storage.getItem(cacheKey + TTL_SUFFIX);
 
-        if (cacheValid && typeof cacheValid === 'function' && !cacheValid()){
+        if (cacheValid && typeof cacheValid === 'function' && !cacheValid()) {
             removeFromStorage(storage, cacheKey);
             ttl = 0;
         }
 
-        if (ttl && ttl < +new Date()){
+        if (ttl && ttl < +new Date()) {
             removeFromStorage(storage, cacheKey);
             ttl = 0;
         }
 
         value = storage.getItem(cacheKey);
-        if (!value){
+        if (!value) {
             // If it not in the cache, we store the data, add success callback - normal callback will proceed
             if (options.success) {
                 options.realsuccess = options.success;
             }
-            options.success = function(data, status, jqXHR) {
+            options.success = function (data, status, jqXHR) {
                 var strdata = data,
                     dataType = this.dataType || jqXHR.getResponseHeader('Content-Type');
 
                 if (!(responseValid && typeof responseValid === 'function' && !responseValid(data, status, jqXHR))) {
 
-                    if (dataType.toLowerCase().indexOf('json') !== -1) strdata = JSON.stringify(data);
+                    if (dataType.toLowerCase().indexOf('json') !== -1) {
+                        strdata = JSON.stringify(data);
+                    }
 
                     // Save the data to storage catching exceptions (possibly QUOTA_EXCEEDED_ERR)
                     try {
@@ -119,12 +125,14 @@
                     } catch (e) {
                         // Remove any incomplete data that may have been saved before the exception was caught
                         removeFromStorage(storage, cacheKey);
-                        console.log('Cache Error:'+e, cacheKey, strdata);
+                        console.log('Cache Error:' + e, cacheKey, strdata);
                     }
 
                 }
 
-                if (options.realsuccess) options.realsuccess(data, status, jqXHR);
+                if (options.realsuccess) {
+                    options.realsuccess(data, status, jqXHR);
+                }
             };
         }
     });
@@ -137,25 +145,26 @@
      * @params options {Object} Options for the ajax call, modified with ajax standard settings and our
      * cacheKey for this call as determined in prefilter.
      */
-    $.ajaxTransport("+*", function(options){
-        if (options.localCache)
-        {
+    $.ajaxTransport("+*", function (options) {
+        if (options.localCache) {
             var cacheKey = options.cacheKey,
                 storage = getStorage(options.localCache),
                 dataType = options.dataType || storage.getItem(cacheKey + TYPE_SUFFIX) || 'text',
                 value = (storage) ? storage.getItem(cacheKey) : false;
 
-            if (value){
+            if (value) {
                 // In the cache? Get it, parse it to json if the dataType is JSON,
                 // and call the completeCallback with the fetched value.
-                if (dataType.toLowerCase().indexOf('json') !== -1) value = JSON.parse(value);
+                if (dataType.toLowerCase().indexOf('json') !== -1) {
+                    value = JSON.parse(value);
+                }
                 return {
-                    send: function(headers, completeCallback) {
+                    send: function (headers, completeCallback) {
                         var response = {};
                         response[dataType] = value;
                         completeCallback(200, 'success', response, '');
                     },
-                    abort: function() {
+                    abort: function () {
                         console.log("Aborted ajax transport for json cache.");
                     }
                 };
