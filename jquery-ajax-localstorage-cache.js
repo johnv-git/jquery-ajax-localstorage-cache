@@ -3,6 +3,9 @@
  */
 ; (function($, window){
     'use strict';
+    var DEFAULT_TTL_HOURS = 5,
+        TTL_SUFFIX = 'cachettl',
+        TYPE_SUFFIX = 'dataType';
 
     /**
      * Generate the cache key under which to store the local data - either the cache key supplied,
@@ -54,8 +57,8 @@
      */
     var removeFromStorage = function(storage, cacheKey){
         storage.removeItem(cacheKey);
-        storage.removeItem(cacheKey + 'cachettl');
-        storage.removeItem(cacheKey + 'dataType');
+        storage.removeItem(cacheKey + TTL_SUFFIX);
+        storage.removeItem(cacheKey + TYPE_SUFFIX);
     };
 
     /**
@@ -73,7 +76,7 @@
      */
     $.ajaxPrefilter(function(options){
         var storage = getStorage(options.localCache),
-            hourstl = options.cacheTTL || 5,
+            hourstl = options.cacheTTL || DEFAULT_TTL_HOURS,
             cacheKey = options.cacheKey = genCacheKey(options),
             cacheValid = options.isCacheValid,
             responseValid = options.isResponseValid,
@@ -81,7 +84,7 @@
             value;
 
         if (!storage) return;
-        ttl = storage.getItem(cacheKey + 'cachettl');
+        ttl = storage.getItem(cacheKey + TTL_SUFFIX);
 
         if (cacheValid && typeof cacheValid === 'function' && !cacheValid()){
             removeFromStorage(storage, cacheKey);
@@ -111,8 +114,8 @@
                     try {
                         storage.setItem(cacheKey, strdata);
                         // Store timestamp and dataType
-                        storage.setItem(cacheKey + 'cachettl', +new Date() + 1000 * 60 * 60 * hourstl);
-                        storage.setItem(cacheKey + 'dataType', dataType);
+                        storage.setItem(cacheKey + TTL_SUFFIX, +new Date() + 1000 * 60 * 60 * hourstl);
+                        storage.setItem(cacheKey + TYPE_SUFFIX, dataType);
                     } catch (e) {
                         // Remove any incomplete data that may have been saved before the exception was caught
                         removeFromStorage(storage, cacheKey);
@@ -139,7 +142,7 @@
         {
             var cacheKey = options.cacheKey,
                 storage = getStorage(options.localCache),
-                dataType = options.dataType || storage.getItem(cacheKey + 'dataType') || 'text',
+                dataType = options.dataType || storage.getItem(cacheKey + TYPE_SUFFIX) || 'text',
                 value = (storage) ? storage.getItem(cacheKey) : false;
 
             if (value){
